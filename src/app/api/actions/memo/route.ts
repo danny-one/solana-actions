@@ -136,7 +136,7 @@ export const POST = async (req: Request) => {
       }),
       new TransactionInstruction({
         programId: new PublicKey(MEMO_PROGRAM_ID),
-        data: messageResult.toString('utf8'),
+        data: messageResult,
         keys: [],
       }),
     );
