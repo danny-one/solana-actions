@@ -22,7 +22,7 @@ import {
 } from "@solana/web3.js";
 import { DEFAULT_SOL_ADDRESS, DEFAULT_SOL_AMOUNT } from "./const";
 
-
+/*
 async function checkForMessage(accountPublicKey, message, batchSize = 100) {
   try {
     const publicKey = new web3.PublicKey(accountPublicKey);
