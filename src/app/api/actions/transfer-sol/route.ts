@@ -22,6 +22,57 @@ import {
 } from "@solana/web3.js";
 import { DEFAULT_SOL_ADDRESS, DEFAULT_SOL_AMOUNT } from "./const";
 
+
+async function checkForMessage(accountPublicKey, message, batchSize = 100) {
+  try {
+    const publicKey = new web3.PublicKey(accountPublicKey);
+    
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    let allSignatures = [];
+    let lastSignature;
+
+    // Fetch all signatures from the last 24 hours
+    while (true) {
+      const signatures = await connection.getSignaturesForAddress(publicKey, {
+        limit: 100,
+        before: lastSignature,
+        until: twentyFourHoursAgo.toISOString(),
+      });
+
+      if (signatures.length === 0) break;
+
+      allSignatures = allSignatures.concat(signatures.map(sig => sig.signature));
+      lastSignature = signatures[signatures.length - 1].signature;
+
+      if (signatures[signatures.length - 1].blockTime * 1000 < twentyFourHoursAgo.getTime()) break;
+    }
+
+    // Process signatures in batches
+    for (let i = 0; i < allSignatures.length; i += batchSize) {
+      const batch = allSignatures.slice(i, i + batchSize);
+      const transactions = await connection.getParsedTransactions(batch, {maxSupportedTransactionVersion: 0});
+
+      for (let tx of transactions) {
+        if (tx?.meta?.logMessages?.some(log => log.includes(message))) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error in checkForMessage:', error);
+    throw error;
+  }
+}
+/*
+// Usage
+checkForMessage('YOUR_ACCOUNT_OR_PROGRAM_PUBLIC_KEY', 'Your specific message')
+  .then(found => console.log(`Message found in last 24 hours: ${found}`))
+  .catch(error => console.error('Error:', error));
+*/
+
 export const GET = async (req: Request) => {
   try {
     const requestUrl = new URL(req.url);
@@ -34,7 +85,7 @@ export const GET = async (req: Request) => {
 
     const payload: ActionGetResponse = {
       title: "Actions Example - Transfer Native SOL",
-      icon: new URL("https://res.cloudinary.com/dyu3y2fjm/video/upload/v1703832378/Shinsei/x7r0obxuhbl7psy8zoe6.mp4").toString(),
+      icon: new URL("/bun_blink.webp", requestUrl.origin).toString(),
       description: "Transfer SOL to another Solana wallet",
       label: "Transfer", // this value will be ignored since `links.actions` exists
       links: {
