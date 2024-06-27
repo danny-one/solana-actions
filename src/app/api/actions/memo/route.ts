@@ -20,16 +20,19 @@ import {
 } from "@solana/web3.js";
 
 
-
-async function checkForMessage(accountPublicKey, message, batchSize = 100) {
+async function checkForMessage(
+  connection: Connection,
+  accountPublicKey: string | PublicKey, 
+  message: string, 
+  batchSize: number = 100
+): Promise<boolean> {
   try {
-	const web3 = require('@solana/web3.js');
-    const publicKey = new web3.PublicKey(accountPublicKey);
+    const publicKey = new PublicKey(accountPublicKey);
     
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     
-    let allSignatures = [];
-    let lastSignature;
+    let allSignatures: string[] = [];
+    let lastSignature: string | undefined;
 
     // Fetch all signatures from the last 24 hours
     while (true) {
@@ -44,7 +47,7 @@ async function checkForMessage(accountPublicKey, message, batchSize = 100) {
       allSignatures = allSignatures.concat(signatures.map(sig => sig.signature));
       lastSignature = signatures[signatures.length - 1].signature;
 
-      if (signatures[signatures.length - 1].blockTime * 1000 < twentyFourHoursAgo.getTime()) break;
+      if ((signatures[signatures.length - 1].blockTime ?? 0) * 1000 < twentyFourHoursAgo.getTime()) break;
     }
 
     // Process signatures in batches
