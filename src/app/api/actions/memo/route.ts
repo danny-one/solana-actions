@@ -115,17 +115,17 @@ export const POST = async (req: Request) => {
     );
 	
 	
-	checkForMessage(connection, account, 'initial message')
-    .then(found => {
-        console.log(`Message found in last 24 hours: ${found}`);
-        let messageResult: Buffer = Buffer.from("second message", "utf8");
-        // Do something with messageResult if needed
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        let messageResult: Buffer = Buffer.from("initial message", "utf8");
-        // Do something with messageResult if needed
-    });
+	let messageResult: Buffer;
+
+
+	try {
+		const found = await checkForMessage(connection, 'YOUR_ACCOUNT_OR_PROGRAM_PUBLIC_KEY', 'initial message');
+		console.log(`Message found in last 24 hours: ${found}`);
+		messageResult = Buffer.from(found ? "second message" : "initial message", "utf8");
+	} catch (error) {
+		console.error('Error:', error);
+		messageResult = Buffer.from("initial message", "utf8");
+	}
 
 
 
