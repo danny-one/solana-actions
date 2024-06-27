@@ -19,10 +19,65 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 
+
+
+async function checkForMessage(accountPublicKey, message, batchSize = 100) {
+  try {
+	const web3 = require('@solana/web3.js');
+    const publicKey = new web3.PublicKey(accountPublicKey);
+    
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    let allSignatures = [];
+    let lastSignature;
+
+    // Fetch all signatures from the last 24 hours
+    while (true) {
+      const signatures = await connection.getSignaturesForAddress(publicKey, {
+        limit: 100,
+        before: lastSignature,
+        until: twentyFourHoursAgo.toISOString(),
+      });
+
+      if (signatures.length === 0) break;
+
+      allSignatures = allSignatures.concat(signatures.map(sig => sig.signature));
+      lastSignature = signatures[signatures.length - 1].signature;
+
+      if (signatures[signatures.length - 1].blockTime * 1000 < twentyFourHoursAgo.getTime()) break;
+    }
+
+    // Process signatures in batches
+    for (let i = 0; i < allSignatures.length; i += batchSize) {
+      const batch = allSignatures.slice(i, i + batchSize);
+      const transactions = await connection.getParsedTransactions(batch, {maxSupportedTransactionVersion: 0});
+
+      for (let tx of transactions) {
+        if (tx?.meta?.logMessages?.some(log => log.includes(message))) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error in checkForMessage:', error);
+    throw error;
+  }
+}
+
+/*
+// Usage
+checkForMessage('YOUR_ACCOUNT_OR_PROGRAM_PUBLIC_KEY', 'Your specific message')
+  .then(found => console.log(`Message found in last 24 hours: ${found}`))
+  .catch(error => console.error('Error:', error));
+*/
+
+
 export const GET = async (req: Request) => {
   const payload: ActionGetResponse = {
     title: "Actions Example - Simple On-chain Memo",
-    icon: new URL("/solana_devs.jpg", new URL(req.url).origin).toString(),
+    icon: new URL("/bun_blink.webp", new URL(req.url).origin).toString(),
     description: "Send a message on-chain using a Memo",
     label: "Send Memo",
   };
@@ -38,9 +93,25 @@ export const OPTIONS = GET;
 
 export const POST = async (req: Request) => {
   try {
+	
+    let account: PublicKey;
+
+	checkForMessage(PublicKey, 'initial message')
+    .then(found => {
+        console.log(`Message found in last 24 hours: ${found}`);
+        let messageResult: Buffer = Buffer.from("second message", "utf8");
+        // Do something with messageResult if needed
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        let messageResult: Buffer = Buffer.from("initial message", "utf8");
+        // Do something with messageResult if needed
+    });
+  
+	
+  
     const body: ActionPostRequest = await req.json();
 
-    let account: PublicKey;
     try {
       account = new PublicKey(body.account);
     } catch (err) {
@@ -61,7 +132,7 @@ export const POST = async (req: Request) => {
       }),
       new TransactionInstruction({
         programId: new PublicKey(MEMO_PROGRAM_ID),
-        data: Buffer.from("this is a simple memo message2", "utf8"),
+        data: messageResult.toString('utf8'),
         keys: [],
       }),
     );
