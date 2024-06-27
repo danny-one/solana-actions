@@ -115,7 +115,7 @@ export const POST = async (req: Request) => {
     );
 	
 	
-	checkForMessage(connection, PublicKey, 'initial message')
+	checkForMessage(connection, account, 'initial message')
     .then(found => {
         console.log(`Message found in last 24 hours: ${found}`);
         let messageResult: Buffer = Buffer.from("second message", "utf8");
