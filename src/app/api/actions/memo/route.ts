@@ -97,21 +97,7 @@ export const OPTIONS = GET;
 export const POST = async (req: Request) => {
   try {
 	
-    let account: PublicKey;
-
-	checkForMessage(PublicKey, 'initial message')
-    .then(found => {
-        console.log(`Message found in last 24 hours: ${found}`);
-        let messageResult: Buffer = Buffer.from("second message", "utf8");
-        // Do something with messageResult if needed
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        let messageResult: Buffer = Buffer.from("initial message", "utf8");
-        // Do something with messageResult if needed
-    });
-  
-	
+    let account: PublicKey;	
   
     const body: ActionPostRequest = await req.json();
 
@@ -127,6 +113,21 @@ export const POST = async (req: Request) => {
     const connection = new Connection(
       process.env.SOLANA_RPC! || clusterApiUrl("devnet"),
     );
+	
+	
+	checkForMessage(connection, PublicKey, 'initial message')
+    .then(found => {
+        console.log(`Message found in last 24 hours: ${found}`);
+        let messageResult: Buffer = Buffer.from("second message", "utf8");
+        // Do something with messageResult if needed
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        let messageResult: Buffer = Buffer.from("initial message", "utf8");
+        // Do something with messageResult if needed
+    });
+
+
 
     const transaction = new Transaction().add(
       // note: `createPostResponse` requires at least 1 non-memo instruction
